@@ -1,0 +1,7 @@
+may.content:
+  path: '/table'
+  defaults:
+    _form: '\Drupal\may\Form\TableForm'
+    _title: 'Table'
+  requirements:
+    _permission: 'access content'

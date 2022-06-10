@@ -26,7 +26,8 @@ class TableForm extends FormBase {
    * {@inheritDoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
-    
+    $form["#attached"]["library"][] = "may/global";
+    return $form;
   }
 
   /**

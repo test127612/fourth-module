@@ -1,1 +1,1 @@
-h1{text-align:center}
+h1{text-align:center}table,td,th,tr{border:1px solid #000;border-collapse:collapse;padding:5px}table{margin:5px}input[type=submit]{background-image:none;background-color:bisque;color:#000;font-size:16px;border:1px solid #000;border-radius:0;width:100px;height:30px;margin:8px 10px 8px 0;padding:5px;cursor:pointer}input[type=submit]:hover{color:red;border:1px solid red}

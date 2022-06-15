@@ -9,6 +9,13 @@ table, tr, td, th {
 table {
   margin: 5px;
 }
+td {
+  max-width: 55px;
+  padding: 0!important;
+}
+td:first-child {
+  max-width: 60px;
+}
 input[type='submit'] {
   background-image: none;
   background-color: bisque;
@@ -26,4 +33,7 @@ input[type='submit'] {
     border: 1px solid red;
     
   }
+}
+div[role='contentinfo'] {
+  display: none;
 }

@@ -18,6 +18,20 @@ use Drupal\Core\Ajax\MessageCommand;
 class TableForm extends FormBase {
 
   /**
+   * Number of tables.
+   *
+   * @var int
+   */
+  protected $tables = 1;
+
+  /**
+   * Number of rows.
+   *
+   * @var array
+   */
+  protected $rows = [1];
+
+  /**
    * {@inheritDoc}
    */
   public function getFormId() {
@@ -34,105 +48,76 @@ class TableForm extends FormBase {
       '#markup' => '<div class="status-message"></div>',
       '#weight' => -100,
     ];
-
-    // Get the number of rows (default = 1).
-    $number_of_rows = $form_state->get('number_of_rows');
-    if (empty($number_of_rows)) {
-      $number_of_rows = 1;
-      $form_state->set('number_of_rows', $number_of_rows);
-    }
-
-    // Button to add the year.
-    $form['add_year'] = [
-      '#type' => 'submit',
-      '#value' => $this->t('Add Year'),
-      '#submit' => ['::addYear'],
-    ];
     
+    // Header for table.
     $header = [
-      'year' => t('Year'),
-      'jan' => t('Jan'),
-      'feb' => t('Feb'),
-      'mar' => t('Mar'),
-      'q1' => t('Q1'),
-      'apr' => t('Apr'),
-      'may' => t('May'),
-      'jun' => t('Jun'),
-      'q2' => t('Q2'),
-      'jul' => t('Jul'),
-      'aug' => t('Aug'),
-      'sep' => t('Sep'),
-      'q3' => t('Q3'),
-      'oct' => t('Oct'),
-      'nov' => t('Nov'),
-      'dec' => t('Dec'),
-      'q4' => t('Q4'),
-      'ytd' => t('YTD'),
+      'year' => $this->t('Year'),
+      'jan' => $this->t('Jan'),
+      'feb' => $this->t('Feb'),
+      'mar' => $this->t('Mar'),
+      'q1' => $this->t('Q1'),
+      'apr' => $this->t('Apr'),
+      'may' => $this->t('May'),
+      'jun' => $this->t('Jun'),
+      'q2' => $this->t('Q2'),
+      'jul' => $this->t('Jul'),
+      'aug' => $this->t('Aug'),
+      'sep' => $this->t('Sep'),
+      'q3' => $this->t('Q3'),
+      'oct' => $this->t('Oct'),
+      'nov' => $this->t('Nov'),
+      'dec' => $this->t('Dec'),
+      'q4' => $this->t('Q4'),
+      'ytd' => $this->t('YTD'),
     ];
 
-    // Create a table.
-    $form['table'] = [
-      '#type' => 'table',
-      '#header' => $header,
-      '#empty' => t('Nothing found'),
-    ];
+    for ($t = 0; $t < $this->tables; $t++) {
 
-    // Create number_of_rows according to $number_of_rows.
-    for ($i=1; $i<=$number_of_rows; $i++) {
-      $form['table'][$i]['year'] = [
-        '#type' => 'number',
+      // Button to add the year.
+      $form["add_year_$t"] = [
+        '#type' => 'submit',
+        '#value' => $this->t('Add Year'),
+        '#name' => $t,
+        '#submit' => ['::addYear'],
       ];
-      $form['table'][$i]['jan'] = [
-        '#type' => 'number',
+
+      // Create a table.
+      $form["table_$t"] = [
+        '#type' => 'table',
+        '#header' => $header,
+        '#empty' => t('Nothing found'),
       ];
-      $form['table'][$i]['feb'] = [
-        '#type' => 'number',
-      ];
-      $form['table'][$i]['mar'] = [
-        '#type' => 'number',
-      ];
-      $form['table'][$i]['q1'] = [
-        '#type' => 'number',
-      ];
-      $form['table'][$i]['apr'] = [
-        '#type' => 'number',
-      ];
-      $form['table'][$i]['may'] = [
-        '#type' => 'number',
-      ];
-      $form['table'][$i]['jun'] = [
-        '#type' => 'number',
-      ];
-      $form['table'][$i]['q2'] = [
-        '#type' => 'number',
-      ];
-      $form['table'][$i]['jul'] = [
-        '#type' => 'number',
-      ];
-      $form['table'][$i]['aug'] = [
-        '#type' => 'number',
-      ];
-      $form['table'][$i]['sep'] = [
-        '#type' => 'number',
-      ];
-      $form['table'][$i]['q3'] = [
-        '#type' => 'number',
-      ];
-      $form['table'][$i]['oct'] = [
-        '#type' => 'number',
-      ];
-      $form['table'][$i]['nov'] = [
-        '#type' => 'number',
-      ];
-      $form['table'][$i]['dec'] = [
-        '#type' => 'number',
-      ];
-      $form['table'][$i]['q4'] = [
-        '#type' => 'number',
-      ];
-      $form['table'][$i]['ytd'] = [
-        '#type' => 'number',
-      ];
+
+      // Create rows with fields.
+      for ($r = $this->rows[$t]; $r > 0; $r--) {
+        foreach ($header as $header_item) {
+          if ($r == 1) {
+            $form["table_$t"]["rows_$r"]['Year'] = [
+              '#type' => 'number',
+              '#disabled' => TRUE,
+              '#default_value' => date('Y'),
+            ];
+          }
+          else {
+            $form["table_$t"]["rows_$r"]['Year'] = [
+              '#type' => 'number',
+              '#disabled' => TRUE,
+              '#default_value' => date('Y') - $r + 1,
+            ];
+          }
+          
+          $form["table_$t"]["rows_$r"]["$header_item"] = [
+            '#type' => 'number',
+          ];
+
+          if (in_array("$header_item", ['Q1', 'Q2', 'Q3', 'Q4', 'YTD'])) {
+            $form["table_$t"]["rows_$r"]["$header_item"] = [
+              '#type' => 'number',
+              '#disabled' => TRUE,
+            ];
+          }
+        }
+      }
     }
  
     // Button to sending form.
@@ -185,14 +170,14 @@ class TableForm extends FormBase {
    * {@inheritDoc}
    */
   public function addYear(array &$form, FormStateInterface $form_state) {
+    $t = $form_state->getTriggeringElement()['#name'];
 
     // Increase by 1 the number of rows.
-    $number_of_rows = $form_state->get('number_of_rows');
-    $number_of_rows++;
-    $form_state->set('number_of_rows', $number_of_rows);
+    $this->rows[$t]++;
 
     // Rebuild form with 1 extra row.
     $form_state->setRebuild();
+    return $form;
   }
 
   /**
@@ -200,6 +185,15 @@ class TableForm extends FormBase {
    */
   public function addTable(array &$form, FormStateInterface $form_state) {
 
+    // Increase by 1 the number of tables.
+    $this->tables++;
+
+    // Default number of rows for new table.
+    $this->rows[] = 1;
+
+    // Rebuild form with 1 extra table.
+    $form_state->setRebuild();
+    return $form;
   }
 
 }

@@ -18,14 +18,14 @@ use Drupal\Core\Ajax\MessageCommand;
 class TableForm extends FormBase {
 
   /**
-   * Number of tables.
+   * Primary number of tables.
    *
    * @var int
    */
   protected $tables = 1;
 
   /**
-   * Number of rows.
+   * Primary number of rows.
    *
    * @var array
    */
@@ -42,14 +42,16 @@ class TableForm extends FormBase {
    * {@inheritDoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
+    $form['#prefix'] = '<div id="wrapper">';
+    $form['#suffix'] = '</div>';
     
-    // Renderable array using Form API.
     $form['messages'] = [
       '#markup' => '<div class="status-message"></div>',
       '#weight' => -100,
     ];
     
     // Header for table.
+    global $header;
     $header = [
       'year' => $this->t('Year'),
       'jan' => $this->t('Jan'),
@@ -124,11 +126,13 @@ class TableForm extends FormBase {
     $form['submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Submit'),
-      '#ajax'=> [
-        'callback' => '::submitForm',
+      '#name' => 'send',
+      '#ajax' => [
         'event' => 'click',
+        'callback' => '::ajaxSubmit',
+        'wrapper' => 'wrapper',
         'progress' => [
-          'type' => 'throbber',
+          'type' => 'none',
         ],
       ],
     ];
@@ -149,21 +153,40 @@ class TableForm extends FormBase {
    * {@inheritDoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
+  
+    // Validation applies only for submit button.
+    if ($form_state->getTriggeringElement()['#name'] !== 'send') {
+      return;
+    }
 
+    for ($t = 0; $t < $this->tables; $t++) {
+      for ($r = $this->rows[$t]; $r > 0; $r--) {
+        $value = $form_state->getValue(["table_$t", "rows_$r"]);
+        if (empty($value['Sep']) || empty($value['Oct']) || empty($value['Nov']) ||
+        empty($value['Dec']) || empty($value['Jan']) || empty($value['Feb']) || empty($value['Mar'])) {
+          $form_state->setErrorByName('empty_field', $this->t('Invalid.'));
+        }
+      }
+    }
   }
 
   /**
    * {@inheritDoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $response = new AjaxResponse();
     if ($form_state->hasAnyErrors()) {
-      $response->addCommand(new MessageCommand($this->t('Form is not valid.'), '.status-message', ['type' => 'error']));
+      $form_state->setErrorByName('table', $this->t('Invalid.'));
     }
     else {
-      $response->addCommand(new MessageCommand($this->t('Form is valid.'), '.status-message', ['type' => 'status']));
+      $this->messenger()->addStatus($this->t('Valid'));
     }
-    return $response;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function ajaxSubmit(array &$form, FormStateInterface $form_state) {
+    return $form;
   }
 
   /**

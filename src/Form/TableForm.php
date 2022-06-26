@@ -70,15 +70,13 @@ class TableForm extends FormBase {
       'q4' => $this->t('Q4'),
       'ytd' => $this->t('YTD'),
     ];
-    $this->active_titles = [
-      'Jan', 'Feb', 'Mar',
-      'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep',
-      'Oct', 'Nov', 'Dec',
-    ];
     $this->inactive_titles = [
-      'Year', 'Q1', 'Q2',
-      'Q3', 'Q4', 'YTD',
+      'Year',
+      'Q1',
+      'Q2',
+      'Q3',
+      'Q4',
+      'YTD',
     ];
   }
 
@@ -201,7 +199,7 @@ class TableForm extends FormBase {
       for ($r = $this->rows[$t]; $r > 0; $r--) {
         $value = $form_state->getValue(["table_$t", "rows_$r"]);
         foreach ($this->titles as $title) {
-          if (empty($form_state->getValue(["table_0", "rows_$r"])["$title"]) !== empty($value["$title"])) {
+          if (empty($form_state->getValue(['table_0', "rows_$r"])["$title"]) !== empty($value["$title"])) {
             $form_state->setErrorByName('error', $this->t('Invalid.'));
           }
         }
@@ -215,7 +213,7 @@ class TableForm extends FormBase {
       $isset_empty = NULL;
       for ($r = $this->rows[$t]; $r > 0; $r--) {
         foreach ($form_state->getValue(["table_$t", "rows_$r"]) as $key => $value) {
-          if (in_array("$key", $this->active_titles)) {
+          if (!in_array("$key", $this->inactive_titles)) {
             if ($r <= $this->rows[$primary_row]) {
               if (!$isset_value && !$isset_empty && !empty($value)) {
                 $isset_value = 1;
@@ -238,11 +236,45 @@ class TableForm extends FormBase {
    * {@inheritDoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    if ($form_state->hasAnyErrors()) {
-      $this->messenger()->addStatus($this->t('Invalid.'));
-    }
-    else {
-      $this->messenger()->addStatus($this->t('Valid.'));
+    $this->messenger()->addStatus($this->t('Valid.'));
+    for ($t = 0; $t < $this->tables; $t++) {
+      for ($r = 1; $r <= $this->rows[$t]; $r++) {
+        $value = $form_state->getValue(["table_$t", "rows_$r"]);
+
+        // Calculation values for quarters.
+        if (empty($value['Jan']) && empty($value['Feb']) && empty($value['Mar'])) {
+          $q1 = 0;
+        }
+        else {
+          $q1 = round(($value['Jan'] + $value['Feb'] + $value['Mar'] + 1) / 3, 2);
+        }
+        if (empty($value['Apr']) && empty($value['May']) && empty($value['Jun'])) {
+          $q2 = 0;
+        }
+        else {
+          $q2 = round(($value['Apr'] + $value['May'] + $value['Jun'] + 1) / 3, 2);
+        }
+        if (empty($value['Jul']) && empty($value['Aug']) && empty($value['Sep'])) {
+          $q3= 0;
+        }
+        else {
+          $q3 = round(($value['Jul'] + $value['Aug'] + $value['Sep'] + 1) / 3, 2);
+        }
+        if (empty($value['Oct']) && empty($value['Nov']) && empty($value['Dec'])) {
+          $q4 = 0;
+        }
+        else {
+          $q4 = round(($value['Oct'] + $value['Nov'] + $value['Dec'] + 1) / 3, 2);
+        }
+        $form["table_$t"]["rows_$r"]['Q1']['#value'] = $q1;
+        $form["table_$t"]["rows_$r"]['Q2']['#value'] = $q2;
+        $form["table_$t"]["rows_$r"]['Q3']['#value'] = $q3;
+        $form["table_$t"]["rows_$r"]['Q4']['#value'] = $q4;
+
+        // Calculation value for ytd.
+        $ytd = round(($q1 + $q2 + $q3 +$q4 + 1) / 4, 2);
+        $form["table_$t"]["rows_$r"]['YTD']['#value'] = $ytd;
+      }
     }
   }
 

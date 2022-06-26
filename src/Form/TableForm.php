@@ -9,8 +9,6 @@ namespace Drupal\may\Form;
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Ajax\AjaxResponse;
-use Drupal\Core\Ajax\MessageCommand;
 
 /**
  * Provides form for the may module.
@@ -32,6 +30,16 @@ class TableForm extends FormBase {
   protected $rows = [1];
 
   /**
+   * Titles for header.
+   */
+  protected $titles;
+
+  /**
+   * Inactive titles for header.
+   */
+  protected $inactive_titles;
+
+  /**
    * {@inheritDoc}
    */
   public function getFormId() {
@@ -39,20 +47,10 @@ class TableForm extends FormBase {
   }
 
   /**
-   * {@inheritDoc}
+   * Function to build a header.
    */
-  public function buildForm(array $form, FormStateInterface $form_state) {
-    $form['#prefix'] = '<div id="wrapper">';
-    $form['#suffix'] = '</div>';
-    
-    $form['messages'] = [
-      '#markup' => '<div class="status-message"></div>',
-      '#weight' => -100,
-    ];
-    
-    // Header for table.
-    global $header;
-    $header = [
+  protected function buildHeader(): void {
+    $this->titles = [
       'year' => $this->t('Year'),
       'jan' => $this->t('Jan'),
       'feb' => $this->t('Feb'),
@@ -72,64 +70,35 @@ class TableForm extends FormBase {
       'q4' => $this->t('Q4'),
       'ytd' => $this->t('YTD'),
     ];
+    $this->active_titles = [
+      'Jan', 'Feb', 'Mar',
+      'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep',
+      'Oct', 'Nov', 'Dec',
+    ];
+    $this->inactive_titles = [
+      'Year', 'Q1', 'Q2',
+      'Q3', 'Q4', 'YTD',
+    ];
+  }
 
-    for ($t = 0; $t < $this->tables; $t++) {
+  /**
+   * {@inheritDoc}
+   */
+  public function buildForm(array $form, FormStateInterface $form_state) {
+    $form['#prefix'] = '<div id="wrapper">';
+    $form['#suffix'] = '</div>';
 
-      // Button to add the year.
-      $form["add_year_$t"] = [
-        '#type' => 'submit',
-        '#value' => $this->t('Add Year'),
-        '#name' => $t,
-        '#submit' => ['::addYear'],
-      ];
+    $this->buildTable($form, $form_state);
 
-      // Create a table.
-      $form["table_$t"] = [
-        '#type' => 'table',
-        '#header' => $header,
-        '#empty' => t('Nothing found'),
-      ];
-
-      // Create rows with fields.
-      for ($r = $this->rows[$t]; $r > 0; $r--) {
-        foreach ($header as $header_item) {
-          if ($r == 1) {
-            $form["table_$t"]["rows_$r"]['Year'] = [
-              '#type' => 'number',
-              '#disabled' => TRUE,
-              '#default_value' => date('Y'),
-            ];
-          }
-          else {
-            $form["table_$t"]["rows_$r"]['Year'] = [
-              '#type' => 'number',
-              '#disabled' => TRUE,
-              '#default_value' => date('Y') - $r + 1,
-            ];
-          }
-          
-          $form["table_$t"]["rows_$r"]["$header_item"] = [
-            '#type' => 'number',
-          ];
-
-          if (in_array("$header_item", ['Q1', 'Q2', 'Q3', 'Q4', 'YTD'])) {
-            $form["table_$t"]["rows_$r"]["$header_item"] = [
-              '#type' => 'number',
-              '#disabled' => TRUE,
-            ];
-          }
-        }
-      }
-    }
- 
-    // Button to sending form.
-    $form['submit'] = [
+     // Button to add the table.
+     $form['add_table'] = [
       '#type' => 'submit',
-      '#value' => $this->t('Submit'),
-      '#name' => 'send',
+      '#value' => $this->t('Add table'),
+      '#submit' => ['::addTable'],
       '#ajax' => [
         'event' => 'click',
-        'callback' => '::ajaxSubmit',
+        'callback' => '::ajaxReload',
         'wrapper' => 'wrapper',
         'progress' => [
           'type' => 'none',
@@ -137,15 +106,83 @@ class TableForm extends FormBase {
       ],
     ];
 
-    // Button to add the table.
-    $form['add_table'] = [
+    // Button to sending form.
+    $form['submit'] = [
       '#type' => 'submit',
-      '#value' => $this->t('Add Table'),
-      '#submit' => ['::addTable'],
+      '#value' => $this->t('Submit'),
+      '#name' => 'send',
+      '#ajax' => [
+        'event' => 'click',
+        'callback' => '::ajaxReload',
+        'wrapper' => 'wrapper',
+        'progress' => [
+          'type' => 'none',
+        ],
+      ],
     ];
 
     $form['#attached']['library'][] = 'may/global';
+    return $form;
+  }
 
+  /**
+   * Function to build tables.
+   */
+  public function buildTable(array &$form, FormStateInterface $form_state) {
+    $this->buildHeader($form, $form_state);
+    for ($t = 0; $t < $this->tables; $t++) {
+      // Button to add the year.
+      $form["add_year_$t"] = [
+        '#type' => 'submit',
+        '#value' => $this->t('Add year'),
+        '#name' => $t,
+        '#submit' => ['::addYear'],
+        '#ajax' => [
+          'event' => 'click',
+          'callback' => '::ajaxReload',
+          'wrapper' => 'wrapper',
+          'progress' => [
+            'type' => 'none',
+          ],
+        ],
+      ];
+      // Create a table.
+      $form["table_$t"] = [
+        '#type' => 'table',
+        '#header' => $this->titles,
+        '#empty' => t('Nothing found'),
+      ];
+      // Create rows with fields.
+      for ($r = $this->rows[$t]; $r > 0; $r--) {
+        // Build titles.
+        foreach ($this->titles as $title) {
+          $form["table_$t"]["rows_$r"]["$title"] = [
+            '#type' => 'number',
+          ];
+        }
+        // Build calculated titles.
+        foreach ($this->inactive_titles as $inactive_title) {
+          $form["table_$t"]["rows_$r"]["$inactive_title"] = [
+            '#type' => 'number',
+            '#disabled' => TRUE,
+          ];
+        }
+        if ($r == 1) {
+          $form["table_$t"]["rows_$r"]['Year'] = [
+            '#type' => 'number',
+            '#disabled' => TRUE,
+            '#default_value' => date('Y'),
+          ];
+        }
+        else {
+          $form["table_$t"]["rows_$r"]['Year'] = [
+            '#type' => 'number',
+            '#disabled' => TRUE,
+            '#default_value' => date('Y') - $r + 1,
+          ];
+        }
+      }
+    }
     return $form;
   }
 
@@ -153,21 +190,48 @@ class TableForm extends FormBase {
    * {@inheritDoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
-  
+
     // Validation applies only for submit button.
     if ($form_state->getTriggeringElement()['#name'] !== 'send') {
       return;
     }
 
+    // Checking tables for similarity.
     for ($t = 0; $t < $this->tables; $t++) {
       for ($r = $this->rows[$t]; $r > 0; $r--) {
         $value = $form_state->getValue(["table_$t", "rows_$r"]);
-        if (empty($value['Sep']) || empty($value['Oct']) || empty($value['Nov']) ||
-        empty($value['Dec']) || empty($value['Jan']) || empty($value['Feb']) || empty($value['Mar'])) {
-          $form_state->setErrorByName('empty_field', $this->t('Invalid.'));
+        foreach ($this->titles as $title) {
+          if (empty($form_state->getValue(["table_0", "rows_$r"])["$title"]) !== empty($value["$title"])) {
+            $form_state->setErrorByName('error', $this->t('Invalid.'));
+          }
         }
       }
     }
+
+    // Checking rows for gaps.
+    $primary_row = array_search(min($this->rows), $this->rows);
+    for ($t = 0; $t < $this->tables; $t++) {
+      $isset_value = NULL;
+      $isset_empty = NULL;
+      for ($r = $this->rows[$t]; $r > 0; $r--) {
+        foreach ($form_state->getValue(["table_$t", "rows_$r"]) as $key => $value) {
+          if (in_array("$key", $this->active_titles)) {
+            if ($r <= $this->rows[$primary_row]) {
+              if (!$isset_value && !$isset_empty && !empty($value)) {
+                $isset_value = 1;
+              }
+              if ($isset_value && !$isset_empty && empty($value)) {
+                $isset_empty = 1;
+              }
+              if ($isset_value && $isset_empty && !empty($value)) {
+                $form_state->setErrorByName('invalid-table', $this->t('Invalid.'));
+              }
+            }
+          }
+        }
+      }
+    }
+
   }
 
   /**
@@ -175,17 +239,19 @@ class TableForm extends FormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     if ($form_state->hasAnyErrors()) {
-      $form_state->setErrorByName('table', $this->t('Invalid.'));
+      $this->messenger()->addStatus($this->t('Invalid.'));
     }
     else {
-      $this->messenger()->addStatus($this->t('Valid'));
+      $this->messenger()->addStatus($this->t('Valid.'));
     }
   }
 
   /**
    * {@inheritDoc}
+   *
+   * Update page.
    */
-  public function ajaxSubmit(array &$form, FormStateInterface $form_state) {
+  public function ajaxReload(array &$form, FormStateInterface $form_state) {
     return $form;
   }
 
@@ -193,6 +259,7 @@ class TableForm extends FormBase {
    * {@inheritDoc}
    */
   public function addYear(array &$form, FormStateInterface $form_state) {
+    // Getting name of button for concrete table.
     $t = $form_state->getTriggeringElement()['#name'];
 
     // Increase by 1 the number of rows.

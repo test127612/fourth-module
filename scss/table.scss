@@ -30,10 +30,9 @@ input[type='submit'] {
   cursor: pointer;
   &:hover {
     color: red;
-    border: 1px solid red;
-    
+    border: 1px solid red; 
   }
-}
-div[role='contentinfo'] {
-  display: none;
+  &:focus {
+    color: black;
+  }
 }

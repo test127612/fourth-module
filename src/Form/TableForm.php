@@ -192,12 +192,16 @@ class TableForm extends FormBase {
       return;
     }
 
+    // Searching table with min count of rows
+    // to compare it with other tables.
+    $primary_rows = array_search(min($this->rows), $this->rows);
+
     // Checking tables for similarity.
     for ($t = 0; $t < $this->tables; $t++) {
       for ($r = $this->rows[$t]; $r > 0; $r--) {
         $value = $form_state->getValue(["table_$t", "rows_$r"]);
         foreach ($this->titles as $title) {
-          if (empty($form_state->getValue(['table_0', "rows_$r"])["$title"]) !== empty($value["$title"])) {
+          if (empty($form_state->getValue(["table_$primary_rows", "rows_$r"])["$title"]) !== empty($value["$title"])) {
             $form_state->setErrorByName('error', $this->t('Invalid.'));
           }
         }
@@ -205,14 +209,13 @@ class TableForm extends FormBase {
     }
 
     // Checking rows for gaps.
-    $primary_row = array_search(min($this->rows), $this->rows);
     for ($t = 0; $t < $this->tables; $t++) {
       $isset_value = NULL;
       $isset_empty = NULL;
       for ($r = $this->rows[$t]; $r > 0; $r--) {
         foreach ($form_state->getValue(["table_$t", "rows_$r"]) as $key => $value) {
           if (!in_array("$key", $this->inactive_titles)) {
-            if ($r <= $this->rows[$primary_row]) {
+            if ($r <= $this->rows[$primary_rows]) {
               if (!$isset_value && !$isset_empty && !empty($value)) {
                 $isset_value = 1;
               }
@@ -269,7 +272,12 @@ class TableForm extends FormBase {
         $form["table_$t"]["rows_$r"]['Q4']['#value'] = $q4;
 
         // Calculation value for ytd.
-        $ytd = round(($q1 + $q2 + $q3 +$q4 + 1) / 4, 2);
+        if ($q1 === 0 && $q2 === 0 && $q3 === 0 && $q4 === 0) {
+          $ytd = 0;
+        }
+        else {
+          $ytd = round(($q1 + $q2 + $q3 +$q4 + 1) / 4, 2);
+        }
         $form["table_$t"]["rows_$r"]['YTD']['#value'] = $ytd;
       }
     }

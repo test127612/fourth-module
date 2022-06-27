@@ -47,7 +47,7 @@ class TableForm extends FormBase {
   }
 
   /**
-   * Function to build a header.
+   * Building a header.
    */
   protected function buildHeader(): void {
     $this->titles = [
@@ -124,7 +124,7 @@ class TableForm extends FormBase {
   }
 
   /**
-   * Function to build tables.
+   * Building tables.
    */
   public function buildTable(array &$form, FormStateInterface $form_state) {
     $this->buildHeader($form, $form_state);
@@ -150,7 +150,6 @@ class TableForm extends FormBase {
         '#header' => $this->titles,
         '#empty' => t('Nothing found'),
       ];
-      // Create rows with fields.
       for ($r = $this->rows[$t]; $r > 0; $r--) {
         // Build titles.
         foreach ($this->titles as $title) {
@@ -188,7 +187,6 @@ class TableForm extends FormBase {
    * {@inheritDoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
-
     // Validation applies only for submit button.
     if ($form_state->getTriggeringElement()['#name'] !== 'send') {
       return;
@@ -229,7 +227,6 @@ class TableForm extends FormBase {
         }
       }
     }
-
   }
 
   /**
@@ -279,16 +276,14 @@ class TableForm extends FormBase {
   }
 
   /**
-   * {@inheritDoc}
-   *
-   * Update page.
+   * Updating a page using ajax.
    */
   public function ajaxReload(array &$form, FormStateInterface $form_state) {
     return $form;
   }
 
   /**
-   * {@inheritDoc}
+   * Adding new row for table.
    */
   public function addYear(array &$form, FormStateInterface $form_state) {
     // Getting name of button for concrete table.
@@ -299,14 +294,12 @@ class TableForm extends FormBase {
 
     // Rebuild form with 1 extra row.
     $form_state->setRebuild();
-    return $form;
   }
 
   /**
-   * {@inheritDoc}
+   * Adding new table.
    */
   public function addTable(array &$form, FormStateInterface $form_state) {
-
     // Increase by 1 the number of tables.
     $this->tables++;
 
@@ -315,7 +308,6 @@ class TableForm extends FormBase {
 
     // Rebuild form with 1 extra table.
     $form_state->setRebuild();
-    return $form;
   }
 
 }

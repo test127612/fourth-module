@@ -240,7 +240,10 @@ class TableForm extends FormBase {
     for ($t = 0; $t < $this->tables; $t++) {
       for ($r = 1; $r <= $this->rows[$t]; $r++) {
         $value = $form_state->getValue(["table_$t", "rows_$r"]);
+
+        // Default value for calculated fields if there are empty.
         $q1 = $q2 = $q3 = $q4 = $ytd = 0;
+        
         // Calculation values for quarters.
         if (!empty($value['Jan']) && !empty($value['Feb']) && !empty($value['Mar'])) {
           $q1 = round(($value['Jan'] + $value['Feb'] + $value['Mar'] + 1) / 3, 2);

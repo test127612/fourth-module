@@ -240,30 +240,18 @@ class TableForm extends FormBase {
     for ($t = 0; $t < $this->tables; $t++) {
       for ($r = 1; $r <= $this->rows[$t]; $r++) {
         $value = $form_state->getValue(["table_$t", "rows_$r"]);
-
+        $q1 = $q2 = $q3 = $q4 = $ytd = 0;
         // Calculation values for quarters.
-        if (empty($value['Jan']) && empty($value['Feb']) && empty($value['Mar'])) {
-          $q1 = 0;
-        }
-        else {
+        if (!empty($value['Jan']) && !empty($value['Feb']) && !empty($value['Mar'])) {
           $q1 = round(($value['Jan'] + $value['Feb'] + $value['Mar'] + 1) / 3, 2);
         }
-        if (empty($value['Apr']) && empty($value['May']) && empty($value['Jun'])) {
-          $q2 = 0;
-        }
-        else {
+        if (!empty($value['Apr']) && !empty($value['May']) && !empty($value['Jun'])) {
           $q2 = round(($value['Apr'] + $value['May'] + $value['Jun'] + 1) / 3, 2);
         }
-        if (empty($value['Jul']) && empty($value['Aug']) && empty($value['Sep'])) {
-          $q3= 0;
-        }
-        else {
+        if (!empty($value['Jul']) && !empty($value['Aug']) && !empty($value['Sep'])) {
           $q3 = round(($value['Jul'] + $value['Aug'] + $value['Sep'] + 1) / 3, 2);
         }
-        if (empty($value['Oct']) && empty($value['Nov']) && empty($value['Dec'])) {
-          $q4 = 0;
-        }
-        else {
+        if (!empty($value['Oct']) && !empty($value['Nov']) && !empty($value['Dec'])) {
           $q4 = round(($value['Oct'] + $value['Nov'] + $value['Dec'] + 1) / 3, 2);
         }
         $form["table_$t"]["rows_$r"]['Q1']['#value'] = $q1;
@@ -272,10 +260,7 @@ class TableForm extends FormBase {
         $form["table_$t"]["rows_$r"]['Q4']['#value'] = $q4;
 
         // Calculation value for ytd.
-        if ($q1 === 0 && $q2 === 0 && $q3 === 0 && $q4 === 0) {
-          $ytd = 0;
-        }
-        else {
+        if ($q1 !== 0 || $q2 !== 0 || $q3 !== 0 || $q4 !== 0) {
           $ytd = round(($q1 + $q2 + $q3 +$q4 + 1) / 4, 2);
         }
         $form["table_$t"]["rows_$r"]['YTD']['#value'] = $ytd;

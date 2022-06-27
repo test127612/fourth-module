@@ -10,11 +10,11 @@ table {
   margin: 5px;
 }
 td {
-  max-width: 55px;
+  max-width: 100px;
   padding: 0!important;
 }
-td:first-child {
-  max-width: 60px;
+input.form-number {
+  max-width: 75px;
 }
 input[type='submit'] {
   background-image: none;

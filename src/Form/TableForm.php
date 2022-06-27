@@ -296,10 +296,8 @@ class TableForm extends FormBase {
   public function addYear(array &$form, FormStateInterface $form_state) {
     // Getting name of button for concrete table.
     $t = $form_state->getTriggeringElement()['#name'];
-
     // Increase by 1 the number of rows.
     $this->rows[$t]++;
-
     // Rebuild form with 1 extra row.
     $form_state->setRebuild();
   }
@@ -310,10 +308,8 @@ class TableForm extends FormBase {
   public function addTable(array &$form, FormStateInterface $form_state) {
     // Increase by 1 the number of tables.
     $this->tables++;
-
     // Default number of rows for new table.
     $this->rows[] = 1;
-
     // Rebuild form with 1 extra table.
     $form_state->setRebuild();
   }

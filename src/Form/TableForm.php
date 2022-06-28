@@ -239,24 +239,32 @@ class TableForm extends FormBase {
     $this->messenger()->addStatus($this->t('Valid.'));
     for ($t = 0; $t < $this->tables; $t++) {
       for ($r = 1; $r <= $this->rows[$t]; $r++) {
+
+        // Get values from table.
         $value = $form_state->getValue(["table_$t", "rows_$r"]);
 
         // Default value for calculated fields if there are empty.
         $q1 = $q2 = $q3 = $q4 = $ytd = 0;
-        
+
         // Calculation values for quarters.
-        if (!empty($value['Jan']) && !empty($value['Feb']) && !empty($value['Mar'])) {
-          $q1 = round(($value['Jan'] + $value['Feb'] + $value['Mar'] + 1) / 3, 2);
+        if (!empty($value['Jan']) || !empty($value['Feb']) || !empty($value['Mar'])) {
+          $sum = (int) $value['Jan'] + (int) $value['Feb'] + (int) $value['Mar'];
+          $q1 = round(($sum + 1) / 3, 2);
         }
-        if (!empty($value['Apr']) && !empty($value['May']) && !empty($value['Jun'])) {
-          $q2 = round(($value['Apr'] + $value['May'] + $value['Jun'] + 1) / 3, 2);
+        if (!empty($value['Apr']) || !empty($value['May']) || !empty($value['Jun'])) {
+          $sum = (int) $value['Apr'] + (int) $value['May'] + (int) $value['Jun'];
+          $q2 = round(($sum + 1) / 3, 2);
         }
-        if (!empty($value['Jul']) && !empty($value['Aug']) && !empty($value['Sep'])) {
-          $q3 = round(($value['Jul'] + $value['Aug'] + $value['Sep'] + 1) / 3, 2);
+        if (!empty($value['Jul']) || !empty($value['Aug']) || !empty($value['Sep'])) {
+          $sum = (int) $value['Jul'] + (int) $value['Aug'] + (int) $value['Sep'];
+          $q3 = round(($sum + 1) / 3, 2);
         }
-        if (!empty($value['Oct']) && !empty($value['Nov']) && !empty($value['Dec'])) {
-          $q4 = round(($value['Oct'] + $value['Nov'] + $value['Dec'] + 1) / 3, 2);
+        if (!empty($value['Oct']) || !empty($value['Nov']) || !empty($value['Dec'])) {
+          $sum = (int) $value['Oct'] + (int) $value['Nov'] + (int) $value['Dec'];
+          $q4 = round(($sum + 1) / 3, 2);
         }
+
+        // Set values.
         $form["table_$t"]["rows_$r"]['Q1']['#value'] = $q1;
         $form["table_$t"]["rows_$r"]['Q2']['#value'] = $q2;
         $form["table_$t"]["rows_$r"]['Q3']['#value'] = $q3;
@@ -266,6 +274,8 @@ class TableForm extends FormBase {
         if ($q1 !== 0 || $q2 !== 0 || $q3 !== 0 || $q4 !== 0) {
           $ytd = round(($q1 + $q2 + $q3 +$q4 + 1) / 4, 2);
         }
+
+        // Set value.
         $form["table_$t"]["rows_$r"]['YTD']['#value'] = $ytd;
       }
     }
